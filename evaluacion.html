@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Síntomas - Mappa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">
+                <i class="fas fa-stethoscope"></i> Mappa
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="evaluacion.html" class="active">Evaluación</a></li>
+                <li><a href="reserva.html">Reservar Cita</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section">
+            <div class="container">
+                <h2><i class="fas fa-robot"></i> Evaluación de Síntomas con IA</h2>
+                <p style="text-align: center; margin-bottom: 2rem; color: #666;">
+                    Nuestro sistema de inteligencia artificial analizará tus síntomas y te recomendará el especialista más adecuado
+                </p>
+                
+                <form id="evaluationForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edad">Edad *</label>
+                            <input type="number" id="edad" name="edad" min="0" max="120" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="genero">Género</label>
+                            <select id="genero" name="genero">
+                                <option value="">Seleccionar</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sintomas">Describe tus síntomas *</label>
+                        <textarea id="sintomas" name="sintomas" placeholder="Describe detalladamente tus síntomas, cuándo comenzaron, intensidad, etc. Ejemplo: 'Tengo dolor de cabeza intenso desde hace 2 días, acompañado de mareos y sensibilidad a la luz'" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duracion">Duración de los síntomas</label>
+                        <select id="duracion" name="duracion">
+                            <option value="">Seleccionar</option>
+                            <option value="menos-1-hora">Menos de 1 hora</option>
+                            <option value="1-6-horas">1-6 horas</option>
+                            <option value="6-24-horas">6-24 horas</option>
+                            <option value="1-3-dias">1-3 días</option>
+                            <option value="mas-3-dias">Más de 3 días</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="intensidad">Intensidad del dolor/malestar (1-10)</label>
+                        <input type="range" id="intensidad" name="intensidad" min="1" max="10" value="5">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #666;">
+                            <span>1 - Muy leve</span>
+                            <span id="intensidad-value">5</span>
+                            <span>10 - Muy intenso</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="medicamentos">¿Estás tomando algún medicamento actualmente?</label>
+                        <textarea id="medicamentos" name="medicamentos" placeholder="Lista los medicamentos que estás tomando actualmente (opcional)"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sintomas-adicionales">Síntomas adicionales (opcional)</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="sintomas-adicionales" value="fiebre"> Fiebre
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="sintomas-adicionales" value="nausea"> Náuseas
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="sintomas-adicionales" value="vomitos"> Vómitos
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="sintomas-adicionales" value="diarrea"> Diarrea
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="sintomas-adicionales" value="fatiga"> Fatiga
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="sintomas-adicionales" value="mareos"> Mareos
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-robot"></i> Analizar con IA y Recomendar Especialista
+                    </button>
+                </form>
+
+                <div id="evaluation-result" class="hidden">
+                    <div class="success-message">
+                        <h3><i class="fas fa-robot"></i> Análisis de IA Completado</h3>
+                        <div id="ai-recommendation"></div>
+                        <div id="evaluation-summary"></div>
+                        <div class="action-buttons">
+                            <a href="reserva.html" class="cta-button primary">
+                                <i class="fas fa-calendar-plus"></i> Reservar Cita con Especialista Recomendado
+                            </a>
+                            <button onclick="resetForm()" class="cta-button secondary">
+                                <i class="fas fa-redo"></i> Nueva Evaluación
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2>Consejos para una mejor evaluación</h2>
+                <div class="tips">
+                    <div class="tip">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>Sé específico</h3>
+                        <p>Describe exactamente dónde sientes el dolor o malestar y cómo se siente</p>
+                    </div>
+                    <div class="tip">
+                        <i class="fas fa-clock"></i>
+                        <h3>Incluye el tiempo</h3>
+                        <p>Menciona cuándo comenzaron los síntomas y si han empeorado o mejorado</p>
+                    </div>
+                    <div class="tip">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Intensidad real</h3>
+                        <p>Evalúa honestamente qué tan intenso es tu malestar en una escala del 1 al 10</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.getElementById('intensidad').addEventListener('input', function() {
+            document.getElementById('intensidad-value').textContent = this.value;
+        });
+
+        async function consultarIAAvanzada(sintomas, edad, intensidad, sintomasAdicionales, medicamentos) {
+            try {
+                const prompt = `Eres un médico experto. Analiza los siguientes síntomas y proporciona un diagnóstico preliminar profesional:
+
+DATOS DEL PACIENTE:
+- Edad: ${edad} años
+- Síntomas principales: ${sintomas}
+- Intensidad del dolor/malestar: ${intensidad}/10
+- Síntomas adicionales: ${sintomasAdicionales.join(', ') || 'Ninguno'}
+- Medicamentos actuales: ${medicamentos || 'Ninguno'}
+
+Por favor, proporciona:
+1. DIAGNÓSTICO PRELIMINAR (máximo 3 posibilidades ordenadas por probabilidad)
+2. ESPECIALISTA RECOMENDADO (especialidad médica más adecuada)
+3. URGENCIA (Alta/Media/Baja)
+4. RECOMENDACIONES INMEDIATAS (qué hacer antes de la consulta)
+5. POSIBLES CAUSAS (factores que podrían estar causando los síntomas)
+6. SEÑALES DE ALERTA (síntomas que requieren atención inmediata)
+
+Responde en formato JSON estructurado y profesional.`;
+
+                const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
+                    model: 'deepseek-chat',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'Eres un médico experto con más de 20 años de experiencia. Proporciona diagnósticos preliminares profesionales, educados y basados en evidencia médica. Siempre recomienda consultar con un médico en persona para confirmación.'
+                        },
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 1000,
+                    temperature: 0.3
+                }, {
+                    headers: {
+                        'Authorization': 'Bearer YOUR_DEEPSEEK_API_KEY',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const aiResponse = response.data.choices[0].message.content;
+                
+                try {
+                    return JSON.parse(aiResponse);
+                } catch {
+                    return {
+                        diagnostico_preliminar: ["Análisis en progreso"],
+                        especialista_recomendado: "Médico General",
+                        urgencia: intensidad >= 8 ? "Alta" : intensidad >= 6 ? "Media" : "Baja",
+                        recomendaciones_inmediatas: "Consulta con un médico",
+                        posibles_causas: ["Requiere evaluación médica"],
+                        senales_alerta: ["Si los síntomas empeoran, acuda a urgencias"],
+                        analisis_completo: aiResponse
+                    };
+                }
+            } catch (error) {
+                console.error('Error al consultar IA avanzada:', error);
+                return null;
+            }
+        }
+
+        function analyzeSymptomsAndRecommendSpecialist(sintomas, edad, intensidad, sintomasAdicionales = []) {
+            const sintomasLower = sintomas.toLowerCase();
+            const specialityPatterns = {
+                'cardiologia': {
+                    keywords: ['dolor pecho', 'dolor torácico', 'palpitaciones', 'arritmia', 'taquicardia', 'bradicardia', 'dificultad respirar', 'fatiga', 'mareo', 'desmayo', 'síncope', 'presión arterial', 'hipertensión', 'corazón', 'cardiaco', 'angina', 'infarto'],
+                    ageFactors: { min: 40, weight: 1.5 },
+                    urgency: { high: 8, medium: 6 }
+                },
+                'neurologia': {
+                    keywords: ['dolor cabeza', 'cefalea', 'migraña', 'mareo', 'vértigo', 'convulsiones', 'epilepsia', 'temblor', 'parálisis', 'debilidad muscular', 'entumecimiento', 'hormigueo', 'pérdida memoria', 'confusión', 'desorientación', 'cambios personalidad', 'problemas habla', 'dificultad caminar', 'coordinación'],
+                    ageFactors: { min: 0, weight: 1.0 },
+                    urgency: { high: 7, medium: 5 }
+                },
+                'pediatria': {
+                    keywords: ['niño', 'bebé', 'infantil', 'fiebre', 'llanto', 'irritabilidad', 'dificultad comer', 'vómitos', 'diarrea', 'desarrollo', 'crecimiento', 'vacunas', 'pediátrico'],
+                    ageFactors: { max: 18, weight: 2.0 },
+                    urgency: { high: 6, medium: 4 }
+                },
+                'ginecologia': {
+                    keywords: ['menstrual', 'regla', 'menstruación', 'embarazo', 'embarazada', 'parto', 'menopausia', 'ovario', 'útero', 'vaginal', 'mama', 'seno', 'mamario', 'pélvico', 'genital', 'fertilidad', 'infertilidad'],
+                    ageFactors: { min: 12, max: 65, weight: 1.3 },
+                    urgency: { high: 7, medium: 5 }
+                },
+                'dermatologia': {
+                    keywords: ['piel', 'dermatitis', 'erupción', 'sarpullido', 'manchas', 'lunares', 'verrugas', 'acné', 'eczema', 'psoriasis', 'alergia', 'picazón', 'prurito', 'urticaria', 'ampollas', 'úlceras', 'cáncer piel', 'melanoma'],
+                    ageFactors: { min: 0, weight: 1.0 },
+                    urgency: { high: 6, medium: 4 }
+                },
+                'oftalmologia': {
+                    keywords: ['ojo', 'ojos', 'visión', 'vista', 'ceguera', 'borroso', 'doble visión', 'dolor ocular', 'enrojecimiento', 'lagrimeo', 'seco', 'glaucoma', 'cataratas', 'retina', 'córnea', 'pupila', 'párpado'],
+                    ageFactors: { min: 0, weight: 1.0 },
+                    urgency: { high: 7, medium: 5 }
+                },
+                'ortopedia': {
+                    keywords: ['hueso', 'articulación', 'dolor espalda', 'dolor lumbar', 'dolor cervical', 'rodilla', 'hombro', 'cadera', 'fractura', 'esguince', 'luxación', 'artritis', 'artrosis', 'osteoporosis', 'tendinitis', 'bursitis', 'hernia discal', 'escoliosis'],
+                    ageFactors: { min: 0, weight: 1.0 },
+                    urgency: { high: 6, medium: 4 }
+                },
+                'medicina-general': {
+                    keywords: ['general', 'malestar', 'cansancio', 'fatiga', 'fiebre', 'gripe', 'resfriado', 'tos', 'congestión', 'dolor general', 'nausea', 'vómitos', 'diarrea', 'estreñimiento', 'pérdida peso', 'ganancia peso'],
+                    ageFactors: { min: 0, weight: 0.8 },
+                    urgency: { high: 5, medium: 3 }
+                }
+            };
+
+            let bestMatch = { speciality: 'medicina-general', score: 0, confidence: 'baja' };
+            let matches = [];
+
+            for (const [speciality, pattern] of Object.entries(specialityPatterns)) {
+                let score = 0;
+                let keywordMatches = 0;
+
+                pattern.keywords.forEach(keyword => {
+                    if (sintomasLower.includes(keyword)) {
+                        score += 2;
+                        keywordMatches++;
+                    }
+                });
+
+                if (pattern.ageFactors.min && edad < pattern.ageFactors.min) {
+                    score *= 0.3;
+                }
+                if (pattern.ageFactors.max && edad > pattern.ageFactors.max) {
+                    score *= 0.3;
+                }
+                if (pattern.ageFactors.min && pattern.ageFactors.max && 
+                    edad >= pattern.ageFactors.min && edad <= pattern.ageFactors.max) {
+                    score *= pattern.ageFactors.weight;
+                }
+
+                if (intensidad >= pattern.urgency.high) {
+                    score *= 1.5;
+                } else if (intensidad >= pattern.urgency.medium) {
+                    score *= 1.2;
+                }
+
+                sintomasAdicionales.forEach(sintoma => {
+                    if (pattern.keywords.some(keyword => keyword.includes(sintoma))) {
+                        score += 1;
+                    }
+                });
+
+                matches.push({
+                    speciality: speciality,
+                    score: score,
+                    keywordMatches: keywordMatches,
+                    confidence: score > 4 ? 'alta' : score > 2 ? 'media' : 'baja'
+                });
+            }
+
+            matches.sort((a, b) => b.score - a.score);
+            bestMatch = matches[0];
+
+            const specialityNames = {
+                'cardiologia': 'Cardiólogo',
+                'neurologia': 'Neurólogo',
+                'pediatria': 'Pediatra',
+                'ginecologia': 'Ginecólogo',
+                'dermatologia': 'Dermatólogo',
+                'oftalmologia': 'Oftalmólogo',
+                'ortopedia': 'Ortopedista',
+                'medicina-general': 'Médico General'
+            };
+
+            const specialityDescriptions = {
+                'cardiologia': 'Especialista en enfermedades del corazón y sistema cardiovascular',
+                'neurologia': 'Especialista en enfermedades del sistema nervioso y cerebro',
+                'pediatria': 'Especialista en salud infantil y desarrollo de niños',
+                'ginecologia': 'Especialista en salud reproductiva femenina',
+                'dermatologia': 'Especialista en enfermedades de la piel, pelo y uñas',
+                'oftalmologia': 'Especialista en salud ocular y problemas de visión',
+                'ortopedia': 'Especialista en huesos, articulaciones y sistema musculoesquelético',
+                'medicina-general': 'Médico general para atención primaria y seguimiento'
+            };
+
+            return {
+                recommendedSpeciality: bestMatch.speciality,
+                specialityName: specialityNames[bestMatch.speciality],
+                description: specialityDescriptions[bestMatch.speciality],
+                confidence: bestMatch.confidence,
+                score: bestMatch.score,
+                allMatches: matches.slice(0, 3)
+            };
+        }
+
+        document.getElementById('evaluationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando con IA Avanzada...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(this);
+                const edad = parseInt(formData.get('edad'));
+                const sintomas = formData.get('sintomas');
+                const duracion = formData.get('duracion');
+                const intensidad = parseInt(formData.get('intensidad'));
+                const medicamentos = formData.get('medicamentos');
+                
+                const sintomasAdicionales = [];
+                const checkboxes = document.querySelectorAll('input[name="sintomas-adicionales"]:checked');
+                checkboxes.forEach(checkbox => {
+                    sintomasAdicionales.push(checkbox.value);
+                });
+                
+                const aiAdvanced = await consultarIAAvanzada(sintomas, edad, intensidad, sintomasAdicionales, medicamentos);
+                const aiAnalysis = analyzeSymptomsAndRecommendSpecialist(sintomas, edad, intensidad, sintomasAdicionales);
+                
+                const finalAnalysis = aiAdvanced || {
+                    especialista_recomendado: aiAnalysis.specialityName,
+                    urgencia: intensidad >= 8 ? "Alta" : intensidad >= 6 ? "Media" : "Baja",
+                    diagnostico_preliminar: ["Requiere evaluación médica"],
+                    recomendaciones_inmediatas: "Consulta con un médico",
+                    posibles_causas: ["Requiere evaluación médica"],
+                    senales_alerta: ["Si los síntomas empeoran, acuda a urgencias"]
+                };
+
+                const aiRecommendationHTML = `
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                        <h4 style="color: white; margin-bottom: 1rem;">
+                            <i class="fas fa-brain"></i> Análisis de IA Avanzada
+                        </h4>
+                        <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <strong>Especialista recomendado:</strong> ${finalAnalysis.especialista_recomendado || aiAnalysis.specialityName}<br>
+                            <strong>Urgencia:</strong> 
+                            <span style="color: ${finalAnalysis.urgencia === 'Alta' ? '#ff6b6b' : finalAnalysis.urgencia === 'Media' ? '#ffa726' : '#4caf50'};">
+                                ${finalAnalysis.urgencia?.toUpperCase() || 'MEDIA'}
+                            </span>
+                        </div>
+                        ${finalAnalysis.diagnostico_preliminar ? `
+                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <strong>Diagnóstico preliminar:</strong><br>
+                                ${finalAnalysis.diagnostico_preliminar.map((diag, index) => `${index + 1}. ${diag}`).join('<br>')}
+                            </div>
+                        ` : ''}
+                        ${finalAnalysis.recomendaciones_inmediatas ? `
+                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <strong>Recomendaciones inmediatas:</strong><br>
+                                ${finalAnalysis.recomendaciones_inmediatas}
+                            </div>
+                        ` : ''}
+                        ${finalAnalysis.senales_alerta ? `
+                            <div style="background: rgba(255,107,107,0.2); padding: 1rem; border-radius: 8px; border-left: 4px solid #ff6b6b;">
+                                <strong>⚠️ Señales de alerta:</strong><br>
+                                ${Array.isArray(finalAnalysis.senales_alerta) ? finalAnalysis.senales_alerta.join('<br>') : finalAnalysis.senales_alerta}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                const summary = `
+                    <strong>Resumen de la evaluación:</strong><br>
+                    • Edad: ${edad} años<br>
+                    • Intensidad: ${intensidad}/10<br>
+                    • Duración: ${duracion || 'No especificada'}<br>
+                    • Síntomas: ${sintomas}<br>
+                    ${sintomasAdicionales.length > 0 ? `• Síntomas adicionales: ${sintomasAdicionales.join(', ')}<br>` : ''}
+                    ${medicamentos ? `• Medicamentos actuales: ${medicamentos}<br>` : ''}
+                    <br>
+                    <strong>Análisis realizado por:</strong> ${aiAdvanced ? 'IA Avanzada (DeepSeek)' : 'Sistema Básico'}
+                `;
+                
+                document.getElementById('ai-recommendation').innerHTML = aiRecommendationHTML;
+                document.getElementById('evaluation-summary').innerHTML = summary;
+                document.getElementById('evaluation-result').classList.remove('hidden');
+                
+                const evaluationData = {
+                    edad: edad,
+                    sintomas: sintomas,
+                    duracion: duracion,
+                    intensidad: intensidad,
+                    medicamentos: medicamentos,
+                    sintomasAdicionales: sintomasAdicionales,
+                    aiAdvanced: aiAdvanced
+                };
+                localStorage.setItem('evaluationData', JSON.stringify(evaluationData));
+                
+                localStorage.setItem('recommendedSpeciality', aiAnalysis.recommendedSpeciality);
+                localStorage.setItem('specialityName', finalAnalysis.especialista_recomendado || aiAnalysis.specialityName);
+                
+            } catch (error) {
+                console.error('Error en la evaluación:', error);
+                alert('Hubo un error al procesar la evaluación. Por favor, inténtalo de nuevo.');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('evaluationForm').reset();
+            document.getElementById('intensidad-value').textContent = '5';
+            document.getElementById('evaluation-result').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
