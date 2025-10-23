@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citas - Mappa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo"><i class="fas fa-stethoscope"></i> Mappa</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="evaluacion.html">Evaluación</a></li>
+                <li><a href="reserva.html">Reservar Cita</a></li>
+                <li><a href="citas.html" class="active">Ver Citas</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section">
+            <div class="container">
+                <h2><i class="fas fa-calendar-check"></i> Todas las Citas</h2>
+                
+                <div class="action-buttons">
+                    <button onclick="cargarCitas()" class="cta-button primary">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                </div>
+
+                <div id="lista-citas"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-editar" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Cita</h3>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-cita">
+                    <div class="form-group">
+                        <label for="edit-nombre">Nombre Completo:</label>
+                        <input type="text" id="edit-nombre" name="nombre" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-telefono">Teléfono:</label>
+                        <input type="tel" id="edit-telefono" name="telefono" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-especialidad">Especialidad:</label>
+                        <select id="edit-especialidad" name="especialidad" required>
+                            <option value="">Seleccionar especialidad</option>
+                            <option value="Medicina General">Medicina General</option>
+                            <option value="Cardiología">Cardiología</option>
+                            <option value="Dermatología">Dermatología</option>
+                            <option value="Ginecología">Ginecología</option>
+                            <option value="Pediatría">Pediatría</option>
+                            <option value="Psicología">Psicología</option>
+                            <option value="Oftalmología">Oftalmología</option>
+                            <option value="Ortopedia">Ortopedia</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-fecha">Fecha:</label>
+                            <input type="date" id="edit-fecha" name="fecha" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-hora">Hora:</label>
+                            <input type="time" id="edit-hora" name="hora" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-motivo">Motivo de la consulta:</label>
+                        <textarea id="edit-motivo" name="motivo" rows="2" placeholder="Describe brevemente el motivo de tu consulta"></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" onclick="cerrarModal()" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'api/citas.php';
+
+        async function cargarCitas() {
+            try {
+                const response = await fetch(API_URL);
+                const citas = await response.json();
+                
+                const container = document.getElementById('lista-citas');
+                
+                if (!citas.length) {
+                    container.innerHTML = '<div class="error-message">No hay citas registradas</div>';
+                    return;
+                }
+
+                container.innerHTML = citas.map(cita => `
+                    <div class="info-card">
+                        <h3>${cita.nombre} <small>${cita.confirmacion}</small></h3>
+                        <p><strong>Teléfono:</strong> ${cita.telefono}</p>
+                        <p><strong>Especialidad:</strong> ${cita.especialidad}</p>
+                        <p><strong>Fecha:</strong> ${cita.fecha} a las ${cita.hora}</p>
+                        ${cita.motivo ? `<p><strong>Motivo:</strong> ${cita.motivo}</p>` : ''}
+                        <div class="action-buttons">
+                            <button onclick="editarCita('${cita.confirmacion}')" class="btn-small" style="background:#2196F3">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="eliminarCita('${cita.confirmacion}')" class="btn-small" style="background:#f44336">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('lista-citas').innerHTML = '<div class="error-message">Error al cargar citas</div>';
+            }
+        }
+
+        async function editarCita(confirmacion) {
+            try {
+                const response = await fetch(API_URL);
+                const citas = await response.json();
+                const cita = citas.find(c => c.confirmacion === confirmacion);
+                
+                if (!cita) {
+                    alert('Cita no encontrada');
+                    return;
+                }
+                
+                document.getElementById('edit-nombre').value = cita.nombre;
+                document.getElementById('edit-telefono').value = cita.telefono;
+                document.getElementById('edit-especialidad').value = cita.especialidad;
+                document.getElementById('edit-fecha').value = cita.fecha;
+                document.getElementById('edit-hora').value = cita.hora;
+                document.getElementById('edit-motivo').value = cita.motivo || '';
+                
+                document.getElementById('form-editar-cita').dataset.confirmacion = confirmacion;
+                
+                const modal = document.getElementById('modal-editar');
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los datos de la cita');
+            }
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-editar').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('form-editar-cita').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const confirmacion = this.dataset.confirmacion;
+            const formData = new FormData(this);
+            
+            try {
+                const updateResponse = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        confirmacion: confirmacion,
+                        nombre: formData.get('nombre'),
+                        telefono: formData.get('telefono'),
+                        especialidad: formData.get('especialidad'),
+                        fecha: formData.get('fecha'),
+                        hora: formData.get('hora'),
+                        motivo: formData.get('motivo')
+                    })
+                });
+                
+                const result = await updateResponse.json();
+                if (result.success) {
+                    alert('Cita actualizada correctamente');
+                    cerrarModal();
+                    cargarCitas();
+                } else {
+                    alert('Error al actualizar la cita');
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            }
+        });
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-editar');
+            if (event.target === modal) {
+                cerrarModal();
+            }
+        }
+
+        async function eliminarCita(confirmacion) {
+            if (!confirm('¿Eliminar esta cita?')) return;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({confirmacion})
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    cargarCitas();
+                } else {
+                    alert('Error al eliminar');
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            }
+        }
+
+        cargarCitas();
+    </script>
+</body>
+</html>
