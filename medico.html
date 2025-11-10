@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Médico - Mappa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Estilos mejorados para el panel médico */
+        .medico-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .medico-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .medico-header h2 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .medico-header p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card i {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0.5rem 0;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        #citas-list {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .citas-group {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .citas-group-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .citas-group-content {
+            padding: 1.5rem;
+        }
+
+        .cita-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .cita-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .cita-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .cita-card.past {
+            opacity: 0.7;
+            border-left-color: #999;
+        }
+
+        .cita-card.today {
+            border-left-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .cita-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .cita-paciente {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cita-confirmacion {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .cita-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .cita-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+        }
+
+        .cita-info-item i {
+            color: #667eea;
+            width: 20px;
+            text-align: center;
+        }
+
+        .cita-info-item strong {
+            color: #333;
+            margin-right: 0.25rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #999;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .loading-state i {
+            font-size: 2.5rem;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .cita-info {
+                grid-template-columns: 1fr;
+            }
+
+            .cita-card-header {
+                flex-direction: column;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-stethoscope"></i> Mappa
+            </a>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-links main-nav" id="navLinks">
+                <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="medico.html" class="active"><i class="fas fa-user-md"></i> Panel Médico</a></li>
+            </ul>
+            
+            <!-- Menú de perfil (solo visible cuando hay sesión) -->
+            <div class="user-menu-container" id="userMenuContainer" style="display: none;">
+                <button class="user-profile-btn" id="userProfileBtn" aria-label="Menú de usuario">
+                    <i class="fas fa-user"></i>
+                </button>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <div class="user-menu-header">
+                        <div class="user-menu-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-menu-info">
+                            <h4 id="userMenuName">Usuario</h4>
+                            <p id="userMenuEmail">correo@ejemplo.com</p>
+                        </div>
+                    </div>
+                    <div class="user-menu-items">
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>Mi Perfil</span>
+                        </a>
+                        <a href="#" class="user-menu-item" id="editInfoMenuItem">
+                            <i class="fas fa-edit"></i>
+                            <span>Editar Información</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Configuración</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notificaciones</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Privacidad</span>
+                        </a>
+                        <div class="user-menu-divider"></div>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Ayuda</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Sobre Mappa</span>
+                        </a>
+                        <div class="user-menu-divider"></div>
+                        <button class="user-menu-item danger" id="logoutMenuItem">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <script>
+        // Verificar sesión y mostrar menú de usuario
+        async function checkAuthAndSetupMenu() {
+            try {
+                const response = await fetch('api/auth.php?action=session', {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                if (result.authenticated) {
+                    document.body.classList.add('authenticated');
+                    const userMenuContainer = document.getElementById('userMenuContainer');
+                    const navLinks = document.getElementById('navLinks');
+                    const menuToggle = document.getElementById('menuToggle');
+                    
+                    if (userMenuContainer) {
+                        userMenuContainer.style.display = 'flex';
+                    }
+                    // Mantener navLinks visibles en desktop cuando hay sesión
+                    if (navLinks && window.innerWidth > 768) {
+                        navLinks.style.display = 'flex';
+                    }
+                    // Ocultar menú hamburguesa en desktop cuando hay sesión
+                    if (menuToggle && window.innerWidth > 768) {
+                        menuToggle.style.display = 'none';
+                    }
+                    // En móvil, mostrar menú hamburguesa
+                    if (menuToggle && window.innerWidth <= 768) {
+                        menuToggle.style.display = 'block';
+                    }
+                    
+                    if (result.user) {
+                        const userNameEl = document.getElementById('userMenuName');
+                        const userEmailEl = document.getElementById('userMenuEmail');
+                        if (userNameEl) userNameEl.textContent = result.user.nombre || 'Usuario';
+                        if (userEmailEl) userEmailEl.textContent = result.user.email || '';
+                        
+                        const avatar = document.querySelector('.user-menu-avatar');
+                        if (avatar && result.user.nombre) {
+                            const initials = result.user.nombre.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                            avatar.textContent = initials;
+                            avatar.style.fontSize = '1rem';
+                            avatar.style.fontWeight = '600';
+                        }
+                    }
+                } else {
+                    document.body.classList.remove('authenticated');
+                }
+            } catch (error) {
+                console.error('Error verificando sesión:', error);
+                document.body.classList.remove('authenticated');
+            }
+        }
+        
+        function setupUserMenu() {
+            const userProfileBtn = document.getElementById('userProfileBtn');
+            const userMenuDropdown = document.getElementById('userMenuDropdown');
+            const logoutMenuItem = document.getElementById('logoutMenuItem');
+            const userMenuContainer = document.getElementById('userMenuContainer');
+            
+            if (userProfileBtn && userMenuDropdown) {
+                userProfileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenuDropdown.classList.toggle('active');
+                    userProfileBtn.classList.toggle('active');
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (userMenuContainer && !userMenuContainer.contains(e.target)) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                });
+                
+                userMenuDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            if (logoutMenuItem) {
+                logoutMenuItem.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    try {
+                        const response = await fetch('api/auth.php?action=logout', {
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            window.location.href = 'login.html';
+                        }
+                    } catch (error) {
+                        console.error('Error al cerrar sesión:', error);
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+            
+            // Manejar "Editar Información"
+            const editInfoMenuItem = document.getElementById('editInfoMenuItem');
+            if (editInfoMenuItem) {
+                editInfoMenuItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (userMenuDropdown) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                    openEditProfileModal();
+                });
+            }
+            
+            document.querySelectorAll('.user-menu-item:not(#logoutMenuItem):not(#editInfoMenuItem)').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (userMenuDropdown) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function setupMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function() {
+                    if (!document.body.classList.contains('authenticated') || window.innerWidth <= 768) {
+                        navLinks.classList.toggle('active');
+                        const icon = this.querySelector('i');
+                        if (navLinks.classList.contains('active')) {
+                            icon.classList.remove('fa-bars');
+                            icon.classList.add('fa-times');
+                        } else {
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            navLinks.classList.remove('active');
+                            const icon = menuToggle.querySelector('i');
+                            if (icon) {
+                                icon.classList.remove('fa-times');
+                                icon.classList.add('fa-bars');
+                            }
+                        }
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768 && !navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+                        navLinks.classList.remove('active');
+                        const icon = menuToggle.querySelector('i');
+                        if (icon) {
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+            }
+        }
+        
+        function handleResize() {
+            if (document.body.classList.contains('authenticated')) {
+                const navLinks = document.getElementById('navLinks');
+                const menuToggle = document.getElementById('menuToggle');
+                
+                if (window.innerWidth > 768) {
+                    if (navLinks) navLinks.style.display = 'flex';
+                    if (menuToggle) menuToggle.style.display = 'none';
+                    if (navLinks) navLinks.classList.remove('active');
+                } else {
+                    if (navLinks && !navLinks.classList.contains('active')) {
+                        navLinks.style.display = 'none';
+                    }
+                    if (menuToggle) menuToggle.style.display = 'block';
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndSetupMenuIntegrated().then(() => {
+                setupUserMenu();
+                setupMobileMenu();
+                handleResize();
+                // Cargar citas después de verificar sesión
+                loadCitas();
+            });
+        });
+        
+        window.addEventListener('resize', handleResize);
+    </script>
+
+    <main>
+        <section class="section">
+            <div class="container medico-container">
+                <div class="medico-header">
+                    <h2><i class="fas fa-user-md"></i> Panel Médico</h2>
+                    <p>Gestiona y visualiza todas tus citas asignadas de manera ordenada</p>
+                </div>
+
+                <div class="stats-bar" id="stats-bar"></div>
+
+                <div class="filters-bar">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> Todas
+                    </button>
+                    <button class="filter-btn" data-filter="today">
+                        <i class="fas fa-calendar-day"></i> Hoy
+                    </button>
+                    <button class="filter-btn" data-filter="upcoming">
+                        <i class="fas fa-calendar-alt"></i> Próximas
+                    </button>
+                    <button class="filter-btn" data-filter="past">
+                        <i class="fas fa-history"></i> Pasadas
+                    </button>
+                </div>
+                
+                <div id="citas-list"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Limpiar inmediatamente los enlaces que auth.js pueda haber agregado
+        (function() {
+            function limpiarEnlaces() {
+                const navLinks = document.querySelector('.nav-links');
+                if (navLinks) {
+                    const authLinks = navLinks.querySelectorAll('.auth-link');
+                    authLinks.forEach(link => link.remove());
+                }
+            }
+            
+            // Limpiar inmediatamente
+            limpiarEnlaces();
+            
+            // Limpiar cuando el DOM esté listo
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', limpiarEnlaces);
+            } else {
+                limpiarEnlaces();
+            }
+            
+            // Limpiar después de un breve delay para asegurar que se ejecute después de auth.js
+            setTimeout(limpiarEnlaces, 100);
+            setTimeout(limpiarEnlaces, 500);
+        })();
+    </script>
+    <script>
+        // Usar nombres diferentes para evitar conflicto con auth.js
+        const CITAS_API_URL = 'api/citas.php';
+        const AUTH_API_URL = 'api/auth.php';
+
+        // Limpiar enlaces de autenticación del navbar
+        function limpiarNavbar() {
+            const navLinks = document.querySelector('.nav-links');
+            if (!navLinks) return;
+            
+            // Eliminar todos los enlaces de autenticación que pueda haber agregado auth.js
+            const authLinks = navLinks.querySelectorAll('.auth-link');
+            authLinks.forEach(link => {
+                console.log('Eliminando enlace de auth:', link);
+                link.remove();
+            });
+            
+            // También eliminar cualquier enlace que contenga "Iniciar Sesión" o "Registrarse"
+            const allLinks = navLinks.querySelectorAll('a');
+            allLinks.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                if (text.includes('iniciar sesión') || text.includes('registrarse')) {
+                    const parent = link.parentElement;
+                    if (parent && parent.tagName === 'LI') {
+                        console.log('Eliminando enlace de login/registro:', parent);
+                        parent.remove();
+                    }
+                }
+            });
+        }
+
+        // Verificar sesión y permisos (integrada con checkAuthAndSetupMenu)
+        async function checkSession() {
+            try {
+                const response = await fetch(`${AUTH_API_URL}?action=session`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                if (!result.authenticated || result.user.rol !== 'medico') {
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error:', error);
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+        
+        // Integrar checkSession con checkAuthAndSetupMenu
+        async function checkAuthAndSetupMenuIntegrated() {
+            const isAuthenticated = await checkSession();
+            if (!isAuthenticated) {
+                return;
+            }
+            
+            // Ahora ejecutar la lógica del menú de perfil
+            await checkAuthAndSetupMenu();
+        }
+
+        // Cargar citas
+        async function loadCitas() {
+            const container = document.getElementById('citas-list');
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i class="fas fa-spinner"></i>
+                    <p style="margin-top: 1rem; color: #666;">Cargando citas...</p>
+                </div>
+            `;
+
+            try {
+                console.log('Cargando citas para médico...');
+                const response = await fetch(CITAS_API_URL, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('Respuesta status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const citas = await response.json();
+                console.log('Citas recibidas:', citas);
+                console.log('Es array:', Array.isArray(citas));
+                console.log('Número de citas:', citas ? citas.length : 0);
+                
+                if (!Array.isArray(citas)) {
+                    console.error('La respuesta no es un array:', citas);
+                    document.getElementById('citas-list').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Error al cargar citas</h3>
+                            <p>Formato de respuesta inválido</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                displayCitas(citas);
+            } catch (error) {
+                console.error('Error al cargar citas:', error);
+                document.getElementById('citas-list').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error al cargar citas</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        let allCitas = [];
+        let currentFilter = 'all';
+
+        function displayCitas(citas) {
+            allCitas = citas;
+            const container = document.getElementById('citas-list');
+            
+            console.log('Mostrando citas:', citas.length);
+            
+            if (!citas || citas.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <h3>No hay citas asignadas</h3>
+                        <p>Cuando tengas citas asignadas, aparecerán aquí</p>
+                    </div>
+                `;
+                updateStats(citas);
+                return;
+            }
+
+            // Ordenar citas por fecha y hora
+            const sortedCitas = [...citas].sort((a, b) => {
+                const dateA = new Date(`${a.fecha}T${a.hora}`);
+                const dateB = new Date(`${b.fecha}T${b.hora}`);
+                return dateA - dateB;
+            });
+
+            // Filtrar citas según el filtro activo
+            const filteredCitas = filterCitas(sortedCitas, currentFilter);
+
+            // Agrupar citas por fecha
+            const groupedCitas = groupCitasByDate(filteredCitas);
+
+            // Actualizar estadísticas
+            updateStats(citas);
+
+            // Renderizar citas agrupadas
+            if (Object.keys(groupedCitas).length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-filter"></i>
+                        <h3>No hay citas con este filtro</h3>
+                        <p>Intenta con otro filtro o fecha</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = Object.keys(groupedCitas).map(fecha => {
+                const citasDelDia = groupedCitas[fecha];
+                const fechaObj = new Date(fecha);
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const fechaComparar = new Date(fechaObj);
+                fechaComparar.setHours(0, 0, 0, 0);
+
+                let fechaLabel = '';
+                if (fechaComparar.getTime() === hoy.getTime()) {
+                    fechaLabel = '<i class="fas fa-calendar-day"></i> Hoy';
+                } else if (fechaComparar > hoy) {
+                    fechaLabel = `<i class="fas fa-calendar-alt"></i> ${fechaObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+                } else {
+                    fechaLabel = `<i class="fas fa-history"></i> ${fechaObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+                }
+
+                return `
+                    <div class="citas-group">
+                        <div class="citas-group-header">
+                            ${fechaLabel}
+                            <span style="margin-left: auto; opacity: 0.9;">${citasDelDia.length} ${citasDelDia.length === 1 ? 'cita' : 'citas'}</span>
+                        </div>
+                        <div class="citas-group-content">
+                            ${citasDelDia.map(cita => renderCitaCard(cita)).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCitaCard(cita) {
+            const fechaObj = new Date(`${cita.fecha}T${cita.hora}`);
+            const ahora = new Date();
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const fechaComparar = new Date(fechaObj);
+            fechaComparar.setHours(0, 0, 0, 0);
+
+            let cardClass = 'cita-card';
+            if (fechaObj < ahora) {
+                cardClass += ' past';
+            } else if (fechaComparar.getTime() === hoy.getTime()) {
+                cardClass += ' today';
+            }
+
+            return `
+                <div class="${cardClass}">
+                    <div class="cita-card-header">
+                        <div class="cita-paciente">
+                            <i class="fas fa-user"></i>
+                            ${cita.nombre}
+                        </div>
+                        <div class="cita-confirmacion">${cita.confirmacion}</div>
+                    </div>
+                    <div class="cita-info">
+                        <div class="cita-info-item">
+                            <i class="fas fa-phone"></i>
+                            <strong>Teléfono:</strong> ${cita.telefono}
+                        </div>
+                        ${cita.email ? `
+                        <div class="cita-info-item">
+                            <i class="fas fa-envelope"></i>
+                            <strong>Email:</strong> ${cita.email}
+                        </div>
+                        ` : ''}
+                        <div class="cita-info-item">
+                            <i class="fas fa-stethoscope"></i>
+                            <strong>Especialidad:</strong> ${cita.especialidad}
+                        </div>
+                        <div class="cita-info-item">
+                            <i class="fas fa-clock"></i>
+                            <strong>Hora:</strong> ${cita.hora}
+                        </div>
+                        ${cita.motivo ? `
+                        <div class="cita-info-item" style="grid-column: 1 / -1;">
+                            <i class="fas fa-file-medical"></i>
+                            <strong>Motivo:</strong> ${cita.motivo}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function groupCitasByDate(citas) {
+            const grouped = {};
+            citas.forEach(cita => {
+                const fecha = cita.fecha;
+                if (!grouped[fecha]) {
+                    grouped[fecha] = [];
+                }
+                grouped[fecha].push(cita);
+            });
+            return grouped;
+        }
+
+        function filterCitas(citas, filter) {
+            const ahora = new Date();
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            switch(filter) {
+                case 'today':
+                    return citas.filter(cita => {
+                        const fecha = new Date(cita.fecha);
+                        fecha.setHours(0, 0, 0, 0);
+                        return fecha.getTime() === hoy.getTime();
+                    });
+                case 'upcoming':
+                    return citas.filter(cita => {
+                        const fechaHora = new Date(`${cita.fecha}T${cita.hora}`);
+                        return fechaHora > ahora;
+                    });
+                case 'past':
+                    return citas.filter(cita => {
+                        const fechaHora = new Date(`${cita.fecha}T${cita.hora}`);
+                        return fechaHora < ahora;
+                    });
+                default:
+                    return citas;
+            }
+        }
+
+        function updateStats(citas) {
+            const ahora = new Date();
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            const total = citas.length;
+            const hoyCount = citas.filter(cita => {
+                const fecha = new Date(cita.fecha);
+                fecha.setHours(0, 0, 0, 0);
+                return fecha.getTime() === hoy.getTime();
+            }).length;
+            const proximas = citas.filter(cita => {
+                const fechaHora = new Date(`${cita.fecha}T${cita.hora}`);
+                return fechaHora > ahora;
+            }).length;
+            const pasadas = citas.filter(cita => {
+                const fechaHora = new Date(`${cita.fecha}T${cita.hora}`);
+                return fechaHora < ahora;
+            }).length;
+
+            document.getElementById('stats-bar').innerHTML = `
+                <div class="stat-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <div class="number">${total}</div>
+                    <div class="label">Total de Citas</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-calendar-day"></i>
+                    <div class="number">${hoyCount}</div>
+                    <div class="label">Citas de Hoy</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div class="number">${proximas}</div>
+                    <div class="label">Próximas</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-history"></i>
+                    <div class="number">${pasadas}</div>
+                    <div class="label">Pasadas</div>
+                </div>
+            `;
+        }
+
+        // Manejar filtros
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.filter-btn')) {
+                const btn = e.target.closest('.filter-btn');
+                const filter = btn.dataset.filter;
+
+                // Actualizar botones activos
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Actualizar filtro y mostrar citas
+                currentFilter = filter;
+                displayCitas(allCitas);
+            }
+        });
+
+    </script>
+    
+    <!-- Modal para editar perfil -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Información</h3>
+                <span class="close" onclick="document.getElementById('editProfileModal').classList.remove('active')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm" onsubmit="event.preventDefault(); saveProfileChanges();">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nombre completo *</label>
+                        <input type="text" id="edit-nombre" required placeholder="Ingresa tu nombre completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email *</label>
+                        <input type="email" id="edit-email" required placeholder="correo@ejemplo.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="edit-telefono" placeholder="+56 9 1234 5678">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-id-card"></i> RUT</label>
+                        <input type="text" id="edit-rut" placeholder="12.345.678-9">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
+                        <input type="date" id="edit-fecha-nacimiento">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
+                        <input type="text" id="edit-direccion" placeholder="Calle, número, departamento">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Región</label>
+                            <select id="edit-region">
+                                <option value="">Seleccionar región</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-pin"></i> Comuna</label>
+                            <select id="edit-comuna" disabled>
+                                <option value="">Primero selecciona una región</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="edit-profile-result" class="hidden"></div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('editProfileModal').classList.remove('active')">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/chile-regiones-comunas.js"></script>
+    <script src="js/edit-profile.js"></script>
+</body>
+</html>
+

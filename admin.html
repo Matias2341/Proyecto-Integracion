@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Mappa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/chile-regiones-comunas.js"></script>
+    <style>
+        body {
+            background: #f5f7fa;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            text-align: center;
+        }
+
+        .admin-header h2 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .admin-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .stat-icon.medicos {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .stat-icon.pacientes {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+            color: white;
+        }
+
+        .stat-icon.admins {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .stat-content h3 {
+            margin: 0;
+            font-size: 2rem;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .stat-content p {
+            margin: 0.25rem 0 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .actions-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .create-user-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .create-user-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .users-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .users-section h3 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .users-table-container {
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .users-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .users-table tbody tr {
+            border-bottom: 1px solid #e1e5e9;
+            transition: background 0.2s ease;
+        }
+
+        .users-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .users-table td {
+            padding: 1rem;
+            color: #555;
+        }
+
+        .role-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            display: inline-block;
+        }
+
+        .role-badge.admin {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .role-badge.medico {
+            background: linear-gradient(135deg, #667eea 0%, #5568d3 100%);
+            color: white;
+        }
+
+        .role-badge.paciente {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge i {
+            font-size: 0.7rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #667eea;
+        }
+
+        .loading-state i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .form-group label i {
+            margin-right: 0.5rem;
+            color: #667eea;
+        }
+
+        .form-group input,
+        .form-group select {
+            position: relative;
+        }
+
+        .form-group input[type="text"]:before,
+        .form-group input[type="email"]:before,
+        .form-group input[type="tel"]:before,
+        .form-group input[type="password"]:before {
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .admin-header h2 {
+                font-size: 2rem;
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .users-table-container {
+                overflow-x: scroll;
+            }
+
+            .users-table {
+                min-width: 800px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-stethoscope"></i> Mappa
+            </a>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-links main-nav" id="navLinks">
+                <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="admin.html" class="active"><i class="fas fa-user-shield"></i> Administración</a></li>
+                <li><a href="citas.html"><i class="fas fa-calendar-check"></i> Ver Citas</a></li>
+            </ul>
+            
+            <!-- Menú de perfil (solo visible cuando hay sesión) -->
+            <div class="user-menu-container" id="userMenuContainer" style="display: none;">
+                <button class="user-profile-btn" id="userProfileBtn" aria-label="Menú de usuario">
+                    <i class="fas fa-user"></i>
+                </button>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <div class="user-menu-header">
+                        <div class="user-menu-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-menu-info">
+                            <h4 id="userMenuName">Usuario</h4>
+                            <p id="userMenuEmail">correo@ejemplo.com</p>
+                        </div>
+                    </div>
+                    <div class="user-menu-items">
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>Mi Perfil</span>
+                        </a>
+                        <a href="#" class="user-menu-item" id="editInfoMenuItem">
+                            <i class="fas fa-edit"></i>
+                            <span>Editar Información</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Configuración</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notificaciones</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Privacidad</span>
+                        </a>
+                        <div class="user-menu-divider"></div>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Ayuda</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Sobre Mappa</span>
+                        </a>
+                        <div class="user-menu-divider"></div>
+                        <button class="user-menu-item danger" id="logoutMenuItem">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <script>
+        // Verificar sesión y mostrar menú de usuario
+        async function checkAuthAndSetupMenu() {
+            try {
+                const response = await fetch('api/auth.php?action=session', {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                if (result.authenticated) {
+                    document.body.classList.add('authenticated');
+                    const userMenuContainer = document.getElementById('userMenuContainer');
+                    const navLinks = document.getElementById('navLinks');
+                    const menuToggle = document.getElementById('menuToggle');
+                    
+                    if (userMenuContainer) {
+                        userMenuContainer.style.display = 'flex';
+                    }
+                    // Mantener navLinks visibles en desktop cuando hay sesión
+                    if (navLinks && window.innerWidth > 768) {
+                        navLinks.style.display = 'flex';
+                    }
+                    // Ocultar menú hamburguesa en desktop cuando hay sesión
+                    if (menuToggle && window.innerWidth > 768) {
+                        menuToggle.style.display = 'none';
+                    }
+                    // En móvil, mostrar menú hamburguesa
+                    if (menuToggle && window.innerWidth <= 768) {
+                        menuToggle.style.display = 'block';
+                    }
+                    
+                    if (result.user) {
+                        const userNameEl = document.getElementById('userMenuName');
+                        const userEmailEl = document.getElementById('userMenuEmail');
+                        if (userNameEl) userNameEl.textContent = result.user.nombre || 'Usuario';
+                        if (userEmailEl) userEmailEl.textContent = result.user.email || '';
+                        
+                        const avatar = document.querySelector('.user-menu-avatar');
+                        if (avatar && result.user.nombre) {
+                            const initials = result.user.nombre.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                            avatar.textContent = initials;
+                            avatar.style.fontSize = '1rem';
+                            avatar.style.fontWeight = '600';
+                        }
+                    }
+                } else {
+                    document.body.classList.remove('authenticated');
+                }
+            } catch (error) {
+                console.error('Error verificando sesión:', error);
+                document.body.classList.remove('authenticated');
+            }
+        }
+        
+        function setupUserMenu() {
+            const userProfileBtn = document.getElementById('userProfileBtn');
+            const userMenuDropdown = document.getElementById('userMenuDropdown');
+            const logoutMenuItem = document.getElementById('logoutMenuItem');
+            const userMenuContainer = document.getElementById('userMenuContainer');
+            
+            if (userProfileBtn && userMenuDropdown) {
+                userProfileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenuDropdown.classList.toggle('active');
+                    userProfileBtn.classList.toggle('active');
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (userMenuContainer && !userMenuContainer.contains(e.target)) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                });
+                
+                userMenuDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            if (logoutMenuItem) {
+                logoutMenuItem.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    try {
+                        const response = await fetch('api/auth.php?action=logout', {
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            window.location.href = 'login.html';
+                        }
+                    } catch (error) {
+                        console.error('Error al cerrar sesión:', error);
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+            
+            // Manejar "Editar Información"
+            const editInfoMenuItem = document.getElementById('editInfoMenuItem');
+            if (editInfoMenuItem) {
+                editInfoMenuItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (userMenuDropdown) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                    openEditProfileModal();
+                });
+            }
+            
+            document.querySelectorAll('.user-menu-item:not(#logoutMenuItem):not(#editInfoMenuItem)').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (userMenuDropdown) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function setupMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function() {
+                    if (!document.body.classList.contains('authenticated') || window.innerWidth <= 768) {
+                        navLinks.classList.toggle('active');
+                        const icon = this.querySelector('i');
+                        if (navLinks.classList.contains('active')) {
+                            icon.classList.remove('fa-bars');
+                            icon.classList.add('fa-times');
+                        } else {
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            navLinks.classList.remove('active');
+                            const icon = menuToggle.querySelector('i');
+                            if (icon) {
+                                icon.classList.remove('fa-times');
+                                icon.classList.add('fa-bars');
+                            }
+                        }
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768 && !navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+                        navLinks.classList.remove('active');
+                        const icon = menuToggle.querySelector('i');
+                        if (icon) {
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+            }
+        }
+        
+        function handleResize() {
+            if (document.body.classList.contains('authenticated')) {
+                const navLinks = document.getElementById('navLinks');
+                const menuToggle = document.getElementById('menuToggle');
+                
+                if (window.innerWidth > 768) {
+                    if (navLinks) navLinks.style.display = 'flex';
+                    if (menuToggle) menuToggle.style.display = 'none';
+                    if (navLinks) navLinks.classList.remove('active');
+                } else {
+                    if (navLinks && !navLinks.classList.contains('active')) {
+                        navLinks.style.display = 'none';
+                    }
+                    if (menuToggle) menuToggle.style.display = 'block';
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndSetupMenu().then(() => {
+                setupUserMenu();
+                setupMobileMenu();
+                handleResize();
+            });
+        });
+        
+        window.addEventListener('resize', handleResize);
+    </script>
+
+    <main>
+        <div class="admin-container">
+            <div class="admin-header">
+                <h2><i class="fas fa-user-shield"></i> Panel de Administración</h2>
+                <p>Gestiona usuarios, médicos y administradores del sistema</p>
+            </div>
+
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-users">-</h3>
+                        <p>Total Usuarios</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon medicos">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-medicos">-</h3>
+                        <p>Médicos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon pacientes">
+                        <i class="fas fa-user-injured"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-pacientes">-</h3>
+                        <p>Pacientes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon admins">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="total-admins">-</h3>
+                        <p>Administradores</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-users" placeholder="Buscar usuarios por nombre, email o especialidad...">
+                </div>
+                <button class="create-user-btn" onclick="document.getElementById('createUserModal').classList.add('active')">
+                    <i class="fas fa-user-plus"></i> Crear Usuario
+                </button>
+            </div>
+
+            <div class="users-section">
+                <h3><i class="fas fa-list"></i> Usuarios Registrados</h3>
+                <div class="users-table-container">
+                    <div id="users-list">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner"></i>
+                            <p>Cargando usuarios...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para crear usuario -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Crear Nuevo Usuario</h3>
+                <span class="close" onclick="document.getElementById('createUserModal').classList.remove('active')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="createUserForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nombre completo *</label>
+                        <input type="text" id="create-nombre" required placeholder="Ingresa el nombre completo">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email *</label>
+                        <input type="email" id="create-email" required placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="create-telefono" placeholder="+56 9 1234 5678">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Región</label>
+                            <select id="create-region">
+                                <option value="">Seleccionar región</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-pin"></i> Comuna</label>
+                            <select id="create-comuna" disabled>
+                                <option value="">Primero selecciona una región</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-user-tag"></i> Rol *</label>
+                        <select id="create-rol" required>
+                            <option value="">Seleccionar rol</option>
+                            <option value="paciente">Paciente</option>
+                            <option value="medico">Médico</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="create-especialidad-group" style="display: none;">
+                        <label><i class="fas fa-stethoscope"></i> Especialidad *</label>
+                        <select id="create-especialidad">
+                            <option value="">Seleccionar especialidad</option>
+                            <option value="Medicina General">Medicina General</option>
+                            <option value="Cardiología">Cardiología</option>
+                            <option value="Neurología">Neurología</option>
+                            <option value="Pediatría">Pediatría</option>
+                            <option value="Ginecología">Ginecología</option>
+                            <option value="Dermatología">Dermatología</option>
+                            <option value="Oftalmología">Oftalmología</option>
+                            <option value="Ortopedia">Ortopedia</option>
+                            <option value="Odontología">Odontología</option>
+                            <option value="Psiquiatría">Psiquiatría</option>
+                            <option value="Endocrinología">Endocrinología</option>
+                            <option value="Urología">Urología</option>
+                            <option value="Otorrinolaringología">Otorrinolaringología</option>
+                            <option value="Gastroenterología">Gastroenterología</option>
+                            <option value="Neumología">Neumología</option>
+                            <option value="Reumatología">Reumatología</option>
+                            <option value="Hematología">Hematología</option>
+                            <option value="Oncología">Oncología</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Contraseña *</label>
+                        <input type="password" id="create-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+                        <small style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; display: block;">
+                            <i class="fas fa-info-circle"></i> Mínimo 6 caracteres
+                        </small>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('createUserModal').classList.remove('active')">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-user-plus"></i> Crear Usuario
+                        </button>
+                    </div>
+                </form>
+                <div id="create-user-result" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'api/auth.php';
+
+        // Verificar sesión y permisos
+        async function checkSession() {
+            try {
+                const response = await fetch(`${API_URL}?action=session`, {
+                    credentials: 'include' // Importante: incluir cookies de sesión
+                });
+                const result = await response.json();
+                
+                if (!result.authenticated || result.user.rol !== 'admin') {
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                
+                // El nombre del usuario se muestra en el menú de perfil
+                return true;
+            } catch (error) {
+                console.error('Error:', error);
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        // Cargar lista de usuarios
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}?action=users`, {
+                    credentials: 'include' // Importante: incluir cookies de sesión
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Debug: Ver qué datos recibimos
+                    console.log('Usuarios cargados:', result.users);
+                    result.users.forEach(user => {
+                        console.log(`Usuario: ${user.nombre}, Rol: ${user.rol}, Especialidad:`, user.especialidad, 'Tipo:', typeof user.especialidad, 'Es undefined?:', user.especialidad === undefined, 'Es null?:', user.especialidad === null, 'Es cadena vacía?:', user.especialidad === '');
+                    });
+                    displayUsers(result.users);
+                }
+            } catch (error) {
+                console.error('Error al cargar usuarios:', error);
+            }
+        }
+
+        function updateStats(users) {
+            const total = users.length;
+            const medicos = users.filter(u => u.rol === 'medico').length;
+            const pacientes = users.filter(u => u.rol === 'paciente').length;
+            const admins = users.filter(u => u.rol === 'admin').length;
+
+            document.getElementById('total-users').textContent = total;
+            document.getElementById('total-medicos').textContent = medicos;
+            document.getElementById('total-pacientes').textContent = pacientes;
+            document.getElementById('total-admins').textContent = admins;
+        }
+
+        let allUsers = [];
+
+        function displayUsers(users, updateStatistics = true) {
+            // Solo actualizar allUsers si es la lista completa (no filtrada)
+            if (updateStatistics) {
+                allUsers = users;
+                updateStats(users);
+            }
+            
+            const container = document.getElementById('users-list');
+            
+            if (users.length === 0) {
+                const searchInput = document.getElementById('search-users');
+                const isSearch = searchInput && searchInput.value.trim() !== '';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-${isSearch ? 'search' : 'users'}"></i>
+                        <p>${isSearch ? 'No se encontraron usuarios que coincidan con la búsqueda' : 'No hay usuarios registrados'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const table = `
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Nombre</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-phone"></i> Teléfono</th>
+                            <th><i class="fas fa-user-tag"></i> Rol</th>
+                            <th><i class="fas fa-stethoscope"></i> Especialidad</th>
+                            <th><i class="fas fa-calendar"></i> Fecha Registro</th>
+                            <th><i class="fas fa-check-circle"></i> Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><strong>${user.nombre}</strong></td>
+                                <td>${user.email}</td>
+                                <td>${user.telefono || '<span style="color: #999;">-</span>'}</td>
+                                <td>
+                                    <span class="role-badge ${user.rol}">
+                                        ${user.rol}
+                                    </span>
+                                </td>
+                                <td>
+                                    ${(function() {
+                                        // Obtener especialidad directamente del objeto usuario
+                                        let especialidad = user.especialidad;
+                                        
+                                        // Debug detallado para médicos
+                                        if (user.rol === 'medico') {
+                                            console.log(`[DEBUG MÉDICO] Nombre: ${user.nombre}`);
+                                            console.log('  - Especialidad raw:', especialidad);
+                                            console.log('  - Tipo:', typeof especialidad);
+                                            console.log('  - Es null?:', especialidad === null);
+                                            console.log('  - Es undefined?:', especialidad === undefined);
+                                            console.log('  - Es cadena vacía?:', especialidad === '');
+                                            console.log('  - Valor después de String():', String(especialidad));
+                                        }
+                                        
+                                        // Verificar si tiene valor válido
+                                        // Considerar válido si no es null, undefined, o cadena vacía
+                                        const tieneEspecialidad = especialidad !== null && 
+                                                                  especialidad !== undefined && 
+                                                                  especialidad !== '' &&
+                                                                  String(especialidad).trim() !== '' &&
+                                                                  String(especialidad).trim() !== 'null';
+                                        
+                                        // Si tiene especialidad, limpiarla y mostrar
+                                        if (tieneEspecialidad) {
+                                            const especialidadLimpia = String(especialidad).trim();
+                                            console.log(`[ÉXITO] Médico ${user.nombre} tiene especialidad: "${especialidadLimpia}"`);
+                                            return `<span class="role-badge" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; font-size: 0.75rem; padding: 0.3rem 0.7rem;">
+                                                <i class="fas fa-stethoscope"></i> ${especialidadLimpia}
+                                            </span>`;
+                                        } else if (user.rol === 'medico') {
+                                            console.log(`[ADVERTENCIA] Médico ${user.nombre} NO tiene especialidad válida. Valor:`, especialidad);
+                                            return '<span style="color: #ff6b6b; font-style: italic; font-size: 0.85rem;"><i class="fas fa-exclamation-triangle"></i> Sin especialidad</span>';
+                                        } else {
+                                            return '<span style="color: #999;">-</span>';
+                                        }
+                                    })()}
+                                </td>
+                                <td>${new Date(user.fecha_creacion).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                })}</td>
+                                <td>
+                                    <span class="status-badge ${user.activo ? 'active' : 'inactive'}">
+                                        <i class="fas fa-${user.activo ? 'check' : 'times'}-circle"></i>
+                                        ${user.activo ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        // Función de búsqueda
+        function filterUsers(searchTerm) {
+            if (!searchTerm.trim()) {
+                displayUsers(allUsers, true);
+                return;
+            }
+
+            if (allUsers.length === 0) {
+                return;
+            }
+
+            const term = searchTerm.toLowerCase();
+            const filtered = allUsers.filter(user => 
+                user.nombre.toLowerCase().includes(term) ||
+                user.email.toLowerCase().includes(term) ||
+                (user.especialidad && user.especialidad.toLowerCase().includes(term)) ||
+                (user.telefono && user.telefono.includes(term))
+            );
+
+            displayUsers(filtered, false);
+        }
+
+        // Mostrar/ocultar campo especialidad según el rol
+        document.getElementById('create-rol').addEventListener('change', function() {
+            const especialidadGroup = document.getElementById('create-especialidad-group');
+            const especialidadSelect = document.getElementById('create-especialidad');
+            
+            if (this.value === 'medico') {
+                especialidadGroup.style.display = 'block';
+                especialidadSelect.required = true;
+            } else {
+                especialidadGroup.style.display = 'none';
+                especialidadSelect.required = false;
+                especialidadSelect.value = '';
+            }
+        });
+
+        // Crear usuario
+        document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+            btn.disabled = true;
+
+            const resultDiv = document.getElementById('create-user-result');
+            resultDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}?action=create_user`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include', // Importante: incluir cookies de sesión
+                    body: JSON.stringify({
+                        nombre: document.getElementById('create-nombre').value,
+                        email: document.getElementById('create-email').value,
+                        telefono: document.getElementById('create-telefono').value,
+                        region: document.getElementById('create-region').value || null,
+                        comuna: document.getElementById('create-comuna').value || null,
+                        rol: document.getElementById('create-rol').value,
+                        especialidad: document.getElementById('create-rol').value === 'medico' 
+                            ? document.getElementById('create-especialidad').value || null 
+                            : null,
+                        password: document.getElementById('create-password').value
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'success-message';
+                    resultDiv.innerHTML = `<p><i class="fas fa-check-circle"></i> ${result.message}</p>`;
+                    resultDiv.classList.remove('hidden');
+                    
+                    this.reset();
+                    loadUsers();
+                    
+                    setTimeout(() => {
+                        document.getElementById('createUserModal').classList.remove('active');
+                    }, 1500);
+                } else {
+                    resultDiv.className = 'error-message';
+                    resultDiv.innerHTML = `<p><i class="fas fa-exclamation-circle"></i> ${result.message}</p>`;
+                    resultDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                resultDiv.className = 'error-message';
+                resultDiv.innerHTML = '<p><i class="fas fa-exclamation-circle"></i> Error al conectar con el servidor</p>';
+                resultDiv.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('createUserModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+
+        // Configurar selects de región y comuna
+        function setupRegionComuna() {
+            const createRegion = document.getElementById('create-region');
+            const createComuna = document.getElementById('create-comuna');
+            
+            if (createRegion && createComuna) {
+                // Llenar regiones
+                createRegion.innerHTML = '<option value="">Seleccionar región</option>';
+                Object.keys(regionesChile).sort().forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region;
+                    option.textContent = region;
+                    createRegion.appendChild(option);
+                });
+                
+                // Escuchar cambios en la región
+                createRegion.addEventListener('change', function() {
+                    const region = this.value;
+                    createComuna.innerHTML = '<option value="">Seleccionar comuna</option>';
+                    
+                    if (region && regionesChile[region]) {
+                        regionesChile[region].sort().forEach(comuna => {
+                            const option = document.createElement('option');
+                            option.value = comuna;
+                            option.textContent = comuna;
+                            createComuna.appendChild(option);
+                        });
+                        createComuna.disabled = false;
+                    } else {
+                        createComuna.disabled = true;
+                    }
+                });
+            }
+        }
+
+        // Búsqueda de usuarios
+        document.getElementById('search-users').addEventListener('input', function(e) {
+            filterUsers(e.target.value);
+        });
+
+        // Inicializar
+        window.addEventListener('DOMContentLoaded', async function() {
+            const isAuthenticated = await checkSession();
+            if (isAuthenticated) {
+                loadUsers();
+                setupRegionComuna();
+            }
+        });
+    </script>
+    
+    <!-- Modal para editar perfil -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Información</h3>
+                <span class="close" onclick="document.getElementById('editProfileModal').classList.remove('active')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm" onsubmit="event.preventDefault(); saveProfileChanges();">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nombre completo *</label>
+                        <input type="text" id="edit-nombre" required placeholder="Ingresa tu nombre completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email *</label>
+                        <input type="email" id="edit-email" required placeholder="correo@ejemplo.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="edit-telefono" placeholder="+56 9 1234 5678">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-id-card"></i> RUT</label>
+                        <input type="text" id="edit-rut" placeholder="12.345.678-9">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
+                        <input type="date" id="edit-fecha-nacimiento">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
+                        <input type="text" id="edit-direccion" placeholder="Calle, número, departamento">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Región</label>
+                            <select id="edit-region">
+                                <option value="">Seleccionar región</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-pin"></i> Comuna</label>
+                            <select id="edit-comuna" disabled>
+                                <option value="">Primero selecciona una región</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="edit-profile-result" class="hidden"></div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('editProfileModal').classList.remove('active')">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/chile-regiones-comunas.js"></script>
+    <script src="js/edit-profile.js"></script>
+</body>
+</html>
+

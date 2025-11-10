@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Mappa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-stethoscope"></i> Mappa
+            </a>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="login.html" class="active"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
+                <li><a href="registro.html"><i class="fas fa-user-plus"></i> Registrarse</a></li>
+            </ul>
+        </nav>
+    </header>
+    <script>
+        // Toggle menu móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                    const icon = this.querySelector('i');
+                    if (navLinks.classList.contains('active')) {
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    } else {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', function() {
+                        navLinks.classList.remove('active');
+                        const icon = menuToggle.querySelector('i');
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+                        navLinks.classList.remove('active');
+                        const icon = menuToggle.querySelector('i');
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <main>
+        <section class="section" style="max-width: 500px; margin: 4rem auto;">
+            <h2><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</h2>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="email" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label>Contraseña *</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+            </form>
+
+            <div id="login-result" class="hidden"></div>
+
+            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e1e5e9;">
+                <p>¿No tienes una cuenta? <a href="registro.html" style="color: #667eea; font-weight: bold;">Regístrate aquí</a></p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = 'api/auth.php';
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = this.querySelector('.submit-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
+            btn.disabled = true;
+
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}?action=login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include', // Importante: incluir cookies de sesión
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'success-message';
+                    resultDiv.innerHTML = `<p><i class="fas fa-check-circle"></i> ${result.message}</p>`;
+                    resultDiv.classList.remove('hidden');
+                    
+                    // Redirigir según el rol del usuario
+                    setTimeout(() => {
+                        const rol = result.user.rol;
+                        if (rol === 'admin') {
+                            window.location.href = 'admin.html';
+                        } else if (rol === 'medico') {
+                            window.location.href = 'medico.html';
+                        } else {
+                            window.location.href = 'index.html';
+                        }
+                    }, 1000);
+                } else {
+                    resultDiv.className = 'error-message';
+                    resultDiv.innerHTML = `<p><i class="fas fa-exclamation-circle"></i> ${result.message}</p>`;
+                    resultDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                resultDiv.className = 'error-message';
+                resultDiv.innerHTML = '<p><i class="fas fa-exclamation-circle"></i> Error al conectar con el servidor</p>';
+                resultDiv.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // Verificar si ya hay una sesión activa
+        window.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch(`${API_URL}?action=session`, {
+                    credentials: 'include' // Importante: incluir cookies de sesión
+                });
+                const result = await response.json();
+                
+                if (result.authenticated) {
+                    // Ya hay una sesión, redirigir
+                    const rol = result.user.rol;
+                    if (rol === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else if (rol === 'medico') {
+                        window.location.href = 'medico.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }
+            } catch (error) {
+                console.error('Error al verificar sesión:', error);
+            }
+        });
+    </script>
+</body>
+</html>
+

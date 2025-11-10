@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar Cita - Mappa</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" onerror="console.warn('Font Awesome no se pudo cargar (posible bloqueador)')">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Ocultar contenido hasta verificar autenticación */
+        body {
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+        body.authenticated {
+            opacity: 1;
+        }
+        
+        /* Asegurar que los campos del formulario se vean normales cuando están habilitados */
+        #appointmentForm input:not([disabled]),
+        #appointmentForm select:not([disabled]),
+        #appointmentForm textarea:not([disabled]) {
+            background-color: #fff !important;
+            color: #333 !important;
+            opacity: 1 !important;
+            cursor: text !important;
+            pointer-events: auto !important;
+        }
+        
+        #appointmentForm select:not([disabled]) {
+            cursor: pointer !important;
+        }
+        
+        #appointmentForm button:not([disabled]) {
+            cursor: pointer !important;
+            opacity: 1 !important;
+        }
+        
+        /* Cuando el formulario está habilitado */
+        #appointmentForm.enabled {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+        }
+        
+        #appointmentForm.enabled * {
+            pointer-events: auto !important;
+        }
+
+        /* Mejoras de interfaz para el formulario de reserva */
+        .reserva-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .reserva-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .reserva-header h2 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .reserva-header p {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        #appointmentForm {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        #appointmentForm:hover {
+            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .form-group label i {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #fafafa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input:disabled,
+        .form-group select:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-group input[readonly] {
+            background: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .form-group small i {
+            margin-right: 0.25rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1.25rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Mejoras en el select */
+        .form-group select {
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 12px;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* Indicador de campo requerido */
+        .required-indicator {
+            color: #f44336;
+            margin-left: 0.25rem;
+        }
+
+        /* Mensaje de éxito */
+        #appointment-result {
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-message {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .success-message h3 {
+            color: #4caf50;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+        }
+
+        .success-message #appointment-summary {
+            text-align: left;
+            background: #f5f5f5;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+        }
+
+        .success-message #appointment-summary p {
+            margin: 0.75rem 0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .success-message #appointment-summary p i {
+            color: #667eea;
+            width: 20px;
+            text-align: center;
+        }
+
+        .success-message #appointment-summary strong {
+            color: #333;
+            min-width: 120px;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .action-buttons a {
+            padding: 0.875rem 1.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-buttons .cta-button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-buttons .cta-button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-buttons .cta-button.secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .action-buttons .cta-button.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        /* Estados de carga */
+        .loading-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+
+        .loading-indicator i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-indicator {
+            color: #f44336;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <script src="js/auth.js"></script>
+    <script>
+        // NO bloquear la página aquí - esperar a que se cargue todo
+        // Solo verificar sesión sin bloquear
+        (async function() {
+            try {
+            const session = await checkSession();
+                if (session && session.authenticated) {
+                // Mostrar contenido si está autenticado
+                document.body.classList.add('authenticated');
+                } else {
+                    // Redirigir solo si definitivamente no está autenticado
+                    setTimeout(() => {
+                        window.location.replace('login.html');
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error en verificación inicial:', error);
+            }
+        })();
+    </script>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-stethoscope"></i> Mappa
+            </a>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-links main-nav" id="navLinks">
+                <li><a href="index.html"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="evaluacion.html"><i class="fas fa-robot"></i> Evaluación</a></li>
+                <li><a href="reserva.html" class="active"><i class="fas fa-calendar-plus"></i> Reservar Cita</a></li>
+                <li><a href="citas.html"><i class="fas fa-calendar-check"></i> Ver Citas</a></li>
+            </ul>
+            
+            <!-- Menú de perfil (solo visible cuando hay sesión) -->
+            <div class="user-menu-container" id="userMenuContainer" style="display: none;">
+                <button class="user-profile-btn" id="userProfileBtn" aria-label="Menú de usuario">
+                    <i class="fas fa-user"></i>
+                </button>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <div class="user-menu-header">
+                        <div class="user-menu-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-menu-info">
+                            <h4 id="userMenuName">Usuario</h4>
+                            <p id="userMenuEmail">correo@ejemplo.com</p>
+                        </div>
+                    </div>
+                    <div class="user-menu-items">
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>Mi Perfil</span>
+                        </a>
+                        <a href="#" class="user-menu-item" id="editInfoMenuItem">
+                            <i class="fas fa-edit"></i>
+                            <span>Editar Información</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Configuración</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-bell"></i>
+                            <span>Notificaciones</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Privacidad</span>
+                        </a>
+                        <div class="user-menu-divider"></div>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Ayuda</span>
+                        </a>
+                        <a href="#" class="user-menu-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Sobre Mappa</span>
+                        </a>
+                        <div class="user-menu-divider"></div>
+                        <button class="user-menu-item danger" id="logoutMenuItem">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <script>
+        // Verificar sesión y mostrar menú de usuario
+        async function checkAuthAndSetupMenu() {
+            try {
+                const response = await fetch('api/auth.php?action=session', {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                if (result.authenticated) {
+                    document.body.classList.add('authenticated');
+                    const userMenuContainer = document.getElementById('userMenuContainer');
+                    const navLinks = document.getElementById('navLinks');
+                    const menuToggle = document.getElementById('menuToggle');
+                    
+                    if (userMenuContainer) {
+                        userMenuContainer.style.display = 'flex';
+                    }
+                    // Mantener navLinks visibles en desktop cuando hay sesión
+                    if (navLinks && window.innerWidth > 768) {
+                        navLinks.style.display = 'flex';
+                    }
+                    // Ocultar menú hamburguesa en desktop cuando hay sesión
+                    if (menuToggle && window.innerWidth > 768) {
+                        menuToggle.style.display = 'none';
+                    }
+                    // En móvil, mostrar menú hamburguesa
+                    if (menuToggle && window.innerWidth <= 768) {
+                        menuToggle.style.display = 'block';
+                    }
+                    
+                    if (result.user) {
+                        const userNameEl = document.getElementById('userMenuName');
+                        const userEmailEl = document.getElementById('userMenuEmail');
+                        if (userNameEl) userNameEl.textContent = result.user.nombre || 'Usuario';
+                        if (userEmailEl) userEmailEl.textContent = result.user.email || '';
+                        
+                        const avatar = document.querySelector('.user-menu-avatar');
+                        if (avatar && result.user.nombre) {
+                            const initials = result.user.nombre.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                            avatar.textContent = initials;
+                            avatar.style.fontSize = '1rem';
+                            avatar.style.fontWeight = '600';
+                        }
+                    }
+                } else {
+                    document.body.classList.remove('authenticated');
+                }
+            } catch (error) {
+                console.error('Error verificando sesión:', error);
+                document.body.classList.remove('authenticated');
+            }
+        }
+        
+        function setupUserMenu() {
+            const userProfileBtn = document.getElementById('userProfileBtn');
+            const userMenuDropdown = document.getElementById('userMenuDropdown');
+            const logoutMenuItem = document.getElementById('logoutMenuItem');
+            const userMenuContainer = document.getElementById('userMenuContainer');
+            
+            if (userProfileBtn && userMenuDropdown) {
+                userProfileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenuDropdown.classList.toggle('active');
+                    userProfileBtn.classList.toggle('active');
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (userMenuContainer && !userMenuContainer.contains(e.target)) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                });
+                
+                userMenuDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+            
+            if (logoutMenuItem) {
+                logoutMenuItem.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    try {
+                        const response = await fetch('api/auth.php?action=logout', {
+                            credentials: 'include'
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            window.location.href = 'login.html';
+                        }
+                    } catch (error) {
+                        console.error('Error al cerrar sesión:', error);
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+            
+            // Manejar "Editar Información"
+            const editInfoMenuItem = document.getElementById('editInfoMenuItem');
+            if (editInfoMenuItem) {
+                editInfoMenuItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (userMenuDropdown) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                    openEditProfileModal();
+                });
+            }
+            
+            document.querySelectorAll('.user-menu-item:not(#logoutMenuItem):not(#editInfoMenuItem)').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (userMenuDropdown) {
+                        userMenuDropdown.classList.remove('active');
+                        userProfileBtn.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function setupMobileMenu() {
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function() {
+                    if (!document.body.classList.contains('authenticated') || window.innerWidth <= 768) {
+                        navLinks.classList.toggle('active');
+                        const icon = this.querySelector('i');
+                        if (navLinks.classList.contains('active')) {
+                            icon.classList.remove('fa-bars');
+                            icon.classList.add('fa-times');
+                        } else {
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            navLinks.classList.remove('active');
+                            const icon = menuToggle.querySelector('i');
+                            if (icon) {
+                                icon.classList.remove('fa-times');
+                                icon.classList.add('fa-bars');
+                            }
+                        }
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768 && !navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+                        navLinks.classList.remove('active');
+                        const icon = menuToggle.querySelector('i');
+                        if (icon) {
+                            icon.classList.remove('fa-times');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+            }
+        }
+        
+        function handleResize() {
+            if (document.body.classList.contains('authenticated')) {
+                const navLinks = document.getElementById('navLinks');
+                const menuToggle = document.getElementById('menuToggle');
+                
+                if (window.innerWidth > 768) {
+                    if (navLinks) navLinks.style.display = 'flex';
+                    if (menuToggle) menuToggle.style.display = 'none';
+                    if (navLinks) navLinks.classList.remove('active');
+                } else {
+                    if (navLinks && !navLinks.classList.contains('active')) {
+                        navLinks.style.display = 'none';
+                    }
+                    if (menuToggle) menuToggle.style.display = 'block';
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthAndSetupMenu().then(() => {
+                setupUserMenu();
+                setupMobileMenu();
+                handleResize();
+            });
+        });
+        
+        window.addEventListener('resize', handleResize);
+    </script>
+
+    <main>
+        <section class="section">
+            <div class="container reserva-container">
+                <div class="reserva-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Reservar Cita Médica</h2>
+                    <p>Completa el formulario para reservar tu cita con el especialista</p>
+                </div>
+                
+                <form id="appointmentForm" style="pointer-events: none; opacity: 0.6;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-user"></i>
+                                Nombre completo <span class="required-indicator">*</span>
+                            </label>
+                            <input type="text" id="nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-phone"></i>
+                                Teléfono <span class="required-indicator">*</span>
+                            </label>
+                            <input type="tel" id="telefono" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-envelope"></i>
+                                Email
+                            </label>
+                            <input type="email" id="email">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-birthday-cake"></i>
+                                Edad <span class="required-indicator">*</span>
+                            </label>
+                            <input type="number" id="edad" min="0" max="120" required readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                            <small id="edad-info" style="color: #666; font-size: 0.85rem; display: none; margin-top: 0.25rem;">
+                                <i class="fas fa-info-circle"></i> Se calcula automáticamente desde tu fecha de nacimiento
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="especialidad">
+                            <i class="fas fa-stethoscope"></i>
+                            Especialidad <span class="required-indicator">*</span>
+                        </label>
+                        <select id="especialidad" required>
+                            <option value="">Seleccionar especialidad</option>
+                            <option value="medicina-general">Medicina General</option>
+                            <option value="cardiologia">Cardiología</option>
+                            <option value="neurologia">Neurología</option>
+                            <option value="pediatria">Pediatría</option>
+                            <option value="ginecologia">Ginecología</option>
+                            <option value="dermatologia">Dermatología</option>
+                            <option value="oftalmologia">Oftalmología</option>
+                            <option value="ortopedia">Ortopedia</option>
+                            <option value="odontologia">Odontología</option>
+                            <option value="psiquiatria">Psiquiatría</option>
+                            <option value="endocrinologia">Endocrinología</option>
+                            <option value="urologia">Urología</option>
+                            <option value="otorrinolaringologia">Otorrinolaringología</option>
+                            <option value="gastroenterologia">Gastroenterología</option>
+                            <option value="neumologia">Neumología</option>
+                            <option value="reumatologia">Reumatología</option>
+                            <option value="hematologia">Hematología</option>
+                            <option value="oncologia">Oncología</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="medico">
+                            <i class="fas fa-user-doctor"></i>
+                            Médico <span class="required-indicator">*</span>
+                        </label>
+                        <select id="medico" required disabled>
+                            <option value="">Primero selecciona una especialidad</option>
+                        </select>
+                        <small id="medico-loading" class="loading-indicator" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando médicos...
+                        </small>
+                        <small id="medico-error" class="error-indicator" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i> No hay médicos disponibles para esta especialidad
+                        </small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-calendar"></i>
+                                Fecha <span class="required-indicator">*</span>
+                            </label>
+                            <input type="date" id="fecha" required disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-clock"></i>
+                                Hora <span class="required-indicator">*</span>
+                            </label>
+                            <select id="hora" required disabled>
+                                <option value="">Primero selecciona médico y fecha</option>
+                            </select>
+                            <small id="hora-loading" class="loading-indicator" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando horarios...
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-file-medical"></i>
+                            Motivo de la consulta <span class="required-indicator">*</span>
+                        </label>
+                        <textarea id="motivo" placeholder="Describe brevemente el motivo de tu consulta" required></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-calendar-check"></i> Confirmar Reserva
+                    </button>
+                </form>
+
+                <div id="appointment-result" class="hidden">
+                    <div class="success-message">
+                        <h3><i class="fas fa-check-circle"></i> ¡Cita Reservada Exitosamente!</h3>
+                        <div id="appointment-summary"></div>
+                        <div class="action-buttons">
+                            <a href="index.html" class="cta-button primary">
+                                <i class="fas fa-home"></i> Volver al Inicio
+                            </a>
+                            <a href="citas.html" class="cta-button secondary">
+                                <i class="fas fa-calendar-check"></i> Ver Citas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Usar nombres diferentes para evitar conflicto con auth.js
+        const CITAS_API_URL = 'api/citas.php';
+        const AUTH_API_URL = 'api/auth.php';
+        const MEDICOS_API_URL = 'api/medicos.php';
+
+        // Cargar información del usuario autenticado
+        async function loadUserInfo() {
+            try {
+                const response = await fetch(`${AUTH_API_URL}?action=session`, {
+                    method: 'GET',
+                    credentials: 'include', // Importante: incluir cookies de sesión
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.authenticated && result.user) {
+                    const user = result.user;
+                    // Pre-llenar campos si el usuario está autenticado
+                    if (user.nombre) {
+                        const nombreInput = document.getElementById('nombre');
+                        if (nombreInput) nombreInput.value = user.nombre;
+                    }
+                    if (user.email) {
+                        const emailInput = document.getElementById('email');
+                        if (emailInput) emailInput.value = user.email;
+                    }
+                    if (user.telefono) {
+                        const telefonoInput = document.getElementById('telefono');
+                        if (telefonoInput) telefonoInput.value = user.telefono;
+                    }
+                    
+                    // Calcular edad automáticamente desde fecha de nacimiento
+                    console.log('Usuario autenticado:', user);
+                    console.log('Fecha de nacimiento:', user.fecha_nacimiento);
+                    calcularEdadDesdeFechaNacimiento(user.fecha_nacimiento);
+                } else {
+                    // Si no hay sesión, mostrar mensaje
+                    console.warn('Usuario no autenticado o sin fecha de nacimiento');
+                    const edadInfo = document.getElementById('edad-info');
+                    if (edadInfo) {
+                        edadInfo.textContent = 'Inicia sesión para calcular tu edad automáticamente';
+                        edadInfo.style.color = '#f44336';
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar información del usuario:', error);
+                // No bloquear la página si falla la carga de información
+            }
+        }
+
+        async function getCitas() {
+            try {
+                const response = await fetch(CITAS_API_URL, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error al obtener citas:', error);
+                return [];
+            }
+        }
+
+        // Función para calcular edad desde fecha de nacimiento
+        function calcularEdadDesdeFechaNacimiento(fechaNacimiento) {
+            const edadInput = document.getElementById('edad');
+            const edadInfo = document.getElementById('edad-info');
+            
+            if (!fechaNacimiento) {
+                if (edadInput) {
+                    edadInput.value = '';
+                    edadInput.required = true;
+                }
+                if (edadInfo) {
+                    edadInfo.textContent = 'No se encontró fecha de nacimiento. Por favor, actualiza tu perfil.';
+                    edadInfo.style.color = '#f44336';
+                }
+                return;
+            }
+            
+            try {
+                const birthDate = new Date(fechaNacimiento);
+                const today = new Date();
+                
+                // Validar que la fecha sea válida
+                if (isNaN(birthDate.getTime())) {
+                    throw new Error('Fecha de nacimiento inválida');
+                }
+                
+                // Validar que la fecha no sea en el futuro
+                if (birthDate > today) {
+                    throw new Error('La fecha de nacimiento no puede ser en el futuro');
+                }
+                
+                // Calcular edad
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                
+                // Ajustar si aún no ha cumplido años este año
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                
+                // Validar que la edad sea razonable
+                if (age < 0 || age > 120) {
+                    throw new Error('Edad calculada fuera del rango válido');
+                }
+                
+                if (edadInput) {
+                    edadInput.value = age;
+                    edadInput.required = true;
+                }
+                
+                // Ocultar el mensaje informativo cuando la edad se calcula correctamente
+                if (edadInfo) {
+                    edadInfo.style.display = 'none';
+                }
+                
+                console.log(`Edad calculada: ${age} años desde fecha de nacimiento: ${fechaNacimiento}`);
+            } catch (error) {
+                console.error('Error al calcular edad:', error);
+                if (edadInput) {
+                    edadInput.value = '';
+                }
+                if (edadInfo) {
+                    edadInfo.textContent = `Error al calcular edad: ${error.message}`;
+                    edadInfo.style.color = '#f44336';
+                }
+            }
+        }
+
+        // Cargar médicos por especialidad
+        async function cargarMedicos(especialidad) {
+            const medicoSelect = document.getElementById('medico');
+            const medicoLoading = document.getElementById('medico-loading');
+            const medicoError = document.getElementById('medico-error');
+            
+            medicoSelect.disabled = true;
+            medicoSelect.innerHTML = '<option value="">Cargando...</option>';
+            if (medicoLoading) {
+                medicoLoading.style.display = 'flex';
+            }
+            if (medicoError) {
+                medicoError.style.display = 'none';
+            }
+            
+            // Resetear fecha y hora
+            document.getElementById('fecha').disabled = true;
+            document.getElementById('fecha').value = '';
+            document.getElementById('hora').disabled = true;
+            document.getElementById('hora').innerHTML = '<option value="">Primero selecciona médico y fecha</option>';
+            
+            try {
+                const response = await fetch(`${MEDICOS_API_URL}?action=por_especialidad&especialidad=${encodeURIComponent(especialidad)}`, {
+                    credentials: 'include',
+                    headers: {'Accept': 'application/json'}
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const medicos = await response.json();
+                
+                if (medicoLoading) {
+                    medicoLoading.style.display = 'none';
+                }
+                
+                if (!medicos || medicos.length === 0) {
+                    if (medicoError) {
+                        medicoError.style.display = 'flex';
+                    }
+                    medicoSelect.innerHTML = '<option value="">No hay médicos disponibles</option>';
+                    return;
+                }
+                
+                medicoSelect.innerHTML = '<option value="">Seleccionar médico</option>';
+                medicos.forEach(medico => {
+                    const option = document.createElement('option');
+                    option.value = medico.id;
+                    option.textContent = medico.nombre;
+                    medicoSelect.appendChild(option);
+                });
+                
+                medicoSelect.disabled = false;
+            } catch (error) {
+                console.error('Error al cargar médicos:', error);
+                if (medicoLoading) {
+                    medicoLoading.style.display = 'none';
+                }
+                if (medicoError) {
+                    medicoError.style.display = 'flex';
+                }
+                medicoSelect.innerHTML = '<option value="">Error al cargar médicos</option>';
+            }
+        }
+        
+        // Cargar horas disponibles
+        async function cargarHorasDisponibles(medicoId, fecha) {
+            const horaSelect = document.getElementById('hora');
+            const horaLoading = document.getElementById('hora-loading');
+            
+            horaSelect.disabled = true;
+            horaSelect.innerHTML = '<option value="">Cargando...</option>';
+            if (horaLoading) {
+                horaLoading.style.display = 'flex';
+            }
+            
+            try {
+                const response = await fetch(`${MEDICOS_API_URL}?action=horas_disponibles&medico_id=${medicoId}&fecha=${fecha}`, {
+                    credentials: 'include',
+                    headers: {'Accept': 'application/json'}
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const horas = await response.json();
+                
+                if (horaLoading) {
+                    horaLoading.style.display = 'none';
+                }
+                
+                if (!horas || horas.length === 0) {
+                    horaSelect.innerHTML = '<option value="">No hay horarios disponibles</option>';
+                    return;
+                }
+                
+                horaSelect.innerHTML = '<option value="">Seleccionar hora</option>';
+                horas.forEach(hora => {
+                    const option = document.createElement('option');
+                    option.value = hora;
+                    const horaFormateada = hora.length === 5 ? hora : hora.substring(0, 5);
+                    const [h, m] = horaFormateada.split(':');
+                    const horaNum = parseInt(h);
+                    const ampm = horaNum >= 12 ? 'PM' : 'AM';
+                    const hora12 = horaNum > 12 ? horaNum - 12 : (horaNum === 0 ? 12 : horaNum);
+                    option.textContent = `${hora12.toString().padStart(2, '0')}:${m} ${ampm}`;
+                    horaSelect.appendChild(option);
+                });
+                
+                horaSelect.disabled = false;
+            } catch (error) {
+                console.error('Error al cargar horarios:', error);
+                if (horaLoading) {
+                    horaLoading.style.display = 'none';
+                }
+                horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
+            }
+        }
+
+        async function saveCita(cita) {
+            try {
+                const response = await fetch(CITAS_API_URL, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(cita)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error al guardar cita:', error);
+                return {success: false, message: error.message || 'Error al guardar la cita'};
+            }
+        }
+
+        document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Verificar autenticación antes de enviar
+            const sessionCheck = await checkSession();
+            if (!sessionCheck.authenticated) {
+                alert('Debes iniciar sesión para reservar una cita');
+                window.location.replace('login.html');
+                return;
+            }
+            
+            const btn = this.querySelector('.submit-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            btn.disabled = true;
+
+            try {
+                // Obtener información del usuario autenticado
+                const sessionResponse = await fetch(`${AUTH_API_URL}?action=session`, {
+                    method: 'GET',
+                    credentials: 'include', // Importante: incluir cookies de sesión
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!sessionResponse.ok) {
+                    throw new Error(`HTTP error! status: ${sessionResponse.status}`);
+                }
+                
+                const sessionResult = await sessionResponse.json();
+                
+                if (!sessionResult.authenticated) {
+                    alert('Debes iniciar sesión para reservar una cita');
+                    window.location.replace('login.html');
+                    return;
+                }
+
+                const medicoId = document.getElementById('medico').value;
+                if (!medicoId) {
+                    alert('Por favor selecciona un médico');
+                    btn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirmar Reserva';
+                    btn.disabled = false;
+                    return;
+                }
+
+                const citaData = {
+                    nombre: document.getElementById('nombre').value,
+                    telefono: document.getElementById('telefono').value,
+                    email: document.getElementById('email').value,
+                    edadPaciente: document.getElementById('edad').value,
+                    especialidad: document.getElementById('especialidad').value,
+                    medico_id: medicoId,
+                    fecha: document.getElementById('fecha').value,
+                    hora: document.getElementById('hora').value,
+                    tipoConsulta: 'presencial',
+                    motivo: document.getElementById('motivo').value,
+                    confirmacion: 'MED' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                    ownerKey: document.getElementById('email').value || document.getElementById('telefono').value
+                };
+
+                const result = await saveCita(citaData);
+                
+                if (result.success) {
+                    document.getElementById('appointment-summary').innerHTML = `
+                        <p><i class="fas fa-user"></i> <strong>Paciente:</strong> ${citaData.nombre}</p>
+                        <p><i class="fas fa-stethoscope"></i> <strong>Especialidad:</strong> ${citaData.especialidad}</p>
+                        <p><i class="fas fa-calendar"></i> <strong>Fecha:</strong> ${citaData.fecha}</p>
+                        <p><i class="fas fa-clock"></i> <strong>Hora:</strong> ${citaData.hora}</p>
+                        <p><i class="fas fa-ticket-alt"></i> <strong>Confirmación:</strong> <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-weight: 600;">${citaData.confirmacion}</span></p>
+                    `;
+                    document.getElementById('appointment-result').classList.remove('hidden');
+                    // Scroll suave al resultado
+                    document.getElementById('appointment-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    this.reset();
+                    // Recargar información del usuario
+                    loadUserInfo();
+                } else {
+                    alert('Error al guardar la cita: ' + (result.message || 'Por favor intenta nuevamente'));
+                }
+            } catch (error) {
+                alert('Error al procesar la reserva');
+            } finally {
+                btn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirmar Reserva';
+                btn.disabled = false;
+            }
+        });
+
+        // Función para habilitar el formulario
+        function enableForm() {
+            console.log('Habilitando formulario...');
+            const form = document.getElementById('appointmentForm');
+            if (!form) {
+                console.error('Formulario no encontrado');
+                return;
+            }
+            
+            // Agregar clase para habilitar estilos CSS
+            form.classList.add('enabled');
+            
+            // Remover estilos inline que bloquean
+            form.style.pointerEvents = 'auto';
+            form.style.opacity = '1';
+            form.style.cursor = 'default';
+            
+            // Habilitar todos los campos del formulario explícitamente
+            const inputs = form.querySelectorAll('input, select, textarea, button');
+            console.log(`Habilitando ${inputs.length} campos del formulario`);
+            inputs.forEach(input => {
+                // Remover atributos que deshabilitan
+                input.disabled = false;
+                input.readOnly = false;
+                input.removeAttribute('disabled');
+                input.removeAttribute('readonly');
+                
+                // Remover estilos inline que bloquean
+                input.style.pointerEvents = 'auto';
+                input.style.opacity = '1';
+                input.style.cursor = input.tagName === 'SELECT' || input.tagName === 'BUTTON' ? 'pointer' : 'text';
+                
+                // Forzar colores normales
+                if (input.tagName !== 'BUTTON') {
+                    input.style.backgroundColor = '#fff';
+                    input.style.color = '#333';
+                }
+            });
+            
+            // Especial para botones
+            const buttons = form.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.style.cursor = 'pointer';
+                btn.style.opacity = '1';
+            });
+            
+            console.log('Formulario habilitado correctamente');
+        }
+
+        // Proteger página - requiere autenticación
+        window.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM cargado, verificando autenticación...');
+            
+            try {
+                // Verificar autenticación
+            const session = await checkSession();
+                console.log('Resultado de sesión:', session);
+                
+                if (!session || !session.authenticated) {
+                    console.warn('Usuario no autenticado, redirigiendo...');
+                window.location.replace('login.html');
+                return;
+            }
+            
+                // Usuario autenticado - habilitar todo
+                console.log('Usuario autenticado:', session.user);
+            document.body.classList.add('authenticated');
+                
+                // HABILITAR FORMULARIO INMEDIATAMENTE
+                enableForm();
+                
+                // Cargar información del usuario (no bloquea si falla)
+                loadUserInfo().catch(err => {
+                    console.warn('No se pudo cargar info del usuario:', err);
+                });
+                
+                // Configurar fecha mínima
+                const fechaInput = document.getElementById('fecha');
+                if (fechaInput) {
+                    fechaInput.min = new Date().toISOString().split('T')[0];
+                }
+                
+                // Event listeners para el formulario
+                const especialidadSelect = document.getElementById('especialidad');
+                const medicoSelect = document.getElementById('medico');
+                const fechaInputField = document.getElementById('fecha');
+                
+                // Cuando se selecciona especialidad, cargar médicos
+                if (especialidadSelect) {
+                    especialidadSelect.addEventListener('change', function() {
+                        if (this.value) {
+                            cargarMedicos(this.value);
+                        } else {
+                            medicoSelect.disabled = true;
+                            medicoSelect.innerHTML = '<option value="">Primero selecciona una especialidad</option>';
+                            fechaInputField.disabled = true;
+                            fechaInputField.value = '';
+                            document.getElementById('hora').disabled = true;
+                            document.getElementById('hora').innerHTML = '<option value="">Primero selecciona médico y fecha</option>';
+            }
+                    });
+                }
+                
+                // Cuando se selecciona médico, habilitar fecha
+                if (medicoSelect) {
+                    medicoSelect.addEventListener('change', function() {
+                        if (this.value) {
+                            fechaInputField.disabled = false;
+                            document.getElementById('hora').disabled = true;
+                            document.getElementById('hora').innerHTML = '<option value="">Primero selecciona fecha</option>';
+                        } else {
+                            fechaInputField.disabled = true;
+                            fechaInputField.value = '';
+                            document.getElementById('hora').disabled = true;
+                            document.getElementById('hora').innerHTML = '<option value="">Primero selecciona médico y fecha</option>';
+                        }
+                    });
+                }
+                
+                // Cuando se selecciona fecha, cargar horas disponibles
+                if (fechaInputField) {
+                    fechaInputField.addEventListener('change', function() {
+                        const medicoId = medicoSelect.value;
+                        const fecha = this.value;
+                        
+                        if (medicoId && fecha) {
+                            console.log('Cargando horas disponibles para médico:', medicoId, 'fecha:', fecha);
+                            cargarHorasDisponibles(medicoId, fecha);
+                        } else {
+                            document.getElementById('hora').disabled = true;
+                            document.getElementById('hora').innerHTML = '<option value="">Primero selecciona médico y fecha</option>';
+                        }
+                    });
+                }
+                
+                // También recargar horas si cambia el médico después de tener fecha seleccionada
+                if (medicoSelect) {
+                    const originalChangeHandler = medicoSelect.onchange;
+                    medicoSelect.addEventListener('change', function() {
+                        const fecha = fechaInputField.value;
+                        if (this.value && fecha) {
+                            console.log('Médico cambió, recargando horas para fecha:', fecha);
+                            cargarHorasDisponibles(this.value, fecha);
+                        }
+                    });
+                }
+                
+                console.log('Página inicializada correctamente');
+            } catch (error) {
+                console.error('Error al inicializar página:', error);
+                // Aún así, intentar habilitar el formulario
+                enableForm();
+            }
+        });
+        
+        // Verificación adicional después de un breve delay
+        setTimeout(async () => {
+            try {
+            const session = await checkSession();
+                if (session && session.authenticated) {
+                    console.log('Verificación adicional: usuario autenticado, asegurando formulario habilitado');
+                    enableForm();
+                }
+            } catch (error) {
+                console.error('Error en verificación adicional:', error);
+            }
+        }, 500);
+    </script>
+    
+    <!-- Modal para editar perfil -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Información</h3>
+                <span class="close" onclick="document.getElementById('editProfileModal').classList.remove('active')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm" onsubmit="event.preventDefault(); saveProfileChanges();">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nombre completo *</label>
+                        <input type="text" id="edit-nombre" required placeholder="Ingresa tu nombre completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email *</label>
+                        <input type="email" id="edit-email" required placeholder="correo@ejemplo.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="edit-telefono" placeholder="+56 9 1234 5678">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-id-card"></i> RUT</label>
+                        <input type="text" id="edit-rut" placeholder="12.345.678-9">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
+                        <input type="date" id="edit-fecha-nacimiento">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
+                        <input type="text" id="edit-direccion" placeholder="Calle, número, departamento">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Región</label>
+                            <select id="edit-region">
+                                <option value="">Seleccionar región</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-pin"></i> Comuna</label>
+                            <select id="edit-comuna" disabled>
+                                <option value="">Primero selecciona una región</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="edit-profile-result" class="hidden"></div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('editProfileModal').classList.remove('active')">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/chile-regiones-comunas.js"></script>
+    <script src="js/edit-profile.js"></script>
+</body>
+</html>
